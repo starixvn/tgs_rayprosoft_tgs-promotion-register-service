@@ -94,7 +94,7 @@ pipeline {
                 script {
                     withKubeConfig([credentialsId: env.k8s_config]) {
 
-                        def resources = getResources(env.k8s_config, env.kube_ns, "promotion-register-api")
+                        def resources = getResources(env.k8s_config, env.kube_ns, "promotion-register-service")
                         def dedicated = getTgsSettings(env.k8s_config, env.kube_ns, "dedicated")
                         def node_selector = getTgsSettings(env.k8s_config, env.kube_ns, "node-selector")
 
@@ -103,7 +103,7 @@ pipeline {
                         println node_selector
 
                         sh '''
-                            cat << EOF | yq e -P | helm template deployment/k8s/promotion-register-api \
+                            cat << EOF | yq e -P | helm template deployment/k8s/promotion-register-service \
                                 -n ${kube_ns} \
                                 --name-template tgs \
                                 --set image.tag=${TAG} \
@@ -115,7 +115,7 @@ pipeline {
                             }
                         '''
                         sh '''
-                            cat << EOF | yq e -P | helm template deployment/k8s/promotion-register-api \
+                            cat << EOF | yq e -P | helm template deployment/k8s/promotion-register-service \
                                 -n ${kube_ns} \
                                 --set image.tag=${TAG} \
                                 --name-template tgs \
