@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: configmap-{{ include "promotion-register-service.name" . }}
+  name: configmap-{{ include "promotion-register-service.fullname" . }}
   namespace: {{ .Release.Namespace }}
 data:
   appsettings.json: |
