@@ -12,7 +12,6 @@ namespace Tgs.Promotion.Register.Core.Application;
 internal class SendRegisterPromotionCommandService : ICommandService<SendRegisterPromotionCommand>
 {
 	private readonly IDistributeRegisterEventRepository _distributeRegisterEventRepository;
-	private readonly IPlayerBucketRepository _playerBucketRepository;
 	private readonly IPlayerServiceClient _playerServiceClient;
 	private readonly IPromotionJoinLockRepository _promotionJoinLockRepository;
 	private readonly IPromotionDistributionRepository _promotionDistributionRepository;
@@ -27,7 +26,6 @@ internal class SendRegisterPromotionCommandService : ICommandService<SendRegiste
 		IPromotionJoinLockRepository promotionJoinLockRepository,
 		IPromotionDistributionRepository promotionDistributionRepository,
 		IDistributeRegisterEventRepository distributeRegisterEventRepository,
-		IPlayerBucketRepository playerBucketRepository,
 		ILogger<SendRegisterPromotionCommandService> logger)
 	{
 		_promotionServiceClient =
@@ -40,8 +38,6 @@ internal class SendRegisterPromotionCommandService : ICommandService<SendRegiste
 			throw new ArgumentNullException(nameof(promotionDistributionRepository));
 		_distributeRegisterEventRepository = distributeRegisterEventRepository ??
 			throw new ArgumentNullException(nameof(distributeRegisterEventRepository));
-		_playerBucketRepository = playerBucketRepository ??
-			throw new ArgumentNullException(nameof(playerBucketRepository));
 		_logger = logger ??
 			throw new ArgumentNullException(nameof(logger));
 	}
@@ -126,11 +122,7 @@ internal class SendRegisterPromotionCommandService : ICommandService<SendRegiste
 			_logger.LogInformation(
 				$"{command.PlayerCode} bucket amount is {bucketAmount}. ({detail.BonusAmount} * {detail.TurnoverMultiple})");
 
-			await _playerBucketRepository.CreatePlayerBucketAsync(player.PlayerCode,
-				bucketAmount, BucketType.Promotion).ConfigureAwait(false);
-
-			_ = await _promotionServiceClient.CreatePromotionDistributeAsync(planInfo.Id, promotion.Id, 0,
-				player.PlayerCode, detail.BonusAmount, null, cancellationToken).ConfigureAwait(false);
+			await _promotionServiceClient.DistributePromotionBonusAsync(planInfo.Id, player.PlayerCode, detail.BonusAmount, bucketAmount, "System", cancellationToken).ConfigureAwait(false);
 
 			await _promotionRepository.CreateTotalAmountRecordForUpdateAsync(promotion.Id, snapshotId, total);
 		}

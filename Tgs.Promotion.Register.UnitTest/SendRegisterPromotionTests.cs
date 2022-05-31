@@ -16,11 +16,10 @@ public class SendRegisterPromotionTests
 	[TestMethod]
 	public async Task Can_Send_Register_Bonus()
 	{
-		var promotionId = Guid.NewGuid();
+		var promotionId = Guid.Parse("71d8bce0-17d6-42a8-867b-18d13671ac6e");
 		var playerCode = "playerCode";
 
 		var fakeDistributeRegisterEventRepository = Substitute.For<IDistributeRegisterEventRepository>();
-		var fakePlayerBucketRepository = Substitute.For<IPlayerBucketRepository>();
 		var fakePromotionRepository = Substitute.For<IPromotionRepository>();
 		var fakePromotionJoinLockRepository = Substitute.For<IPromotionJoinLockRepository>();
 		var fakePromotionDistributionRepository = Substitute.For<IPromotionDistributionRepository>();
@@ -33,6 +32,7 @@ public class SendRegisterPromotionTests
 
 		var promotion = new Core.Models.Promotion
 		{
+			Id = promotionId,
 			From = DateTime.Now.AddDays(-1),
 			To = DateTime.Now.AddDays(1),
 			Status = 0,
@@ -44,10 +44,11 @@ public class SendRegisterPromotionTests
 		_ = fakePromotionRepository
 			.GetPromotionWithCacheAsync(Arg.Any<Guid>())
 			.Returns(promotion);
-
+		
+		var totalAmount = 100M;
 		_ = fakePromotionRepository
 			.IncreaseToTotalAmountAsync(Arg.Any<Guid>(), Arg.Any<long>())
-			.Returns(100);
+			.Returns((long)totalAmount);
 
 		_ = fakePromotionJoinLockRepository
 			.SetWhenNotExistsAsync(Arg.Any<string>(), Arg.Any<Guid>())
@@ -59,18 +60,10 @@ public class SendRegisterPromotionTests
 			.GetPromotionDistributePlanAsync(Arg.Any<Guid>(), Arg.Any<long>())
 			.Returns(promotionDistributePlanInfo);
 
-		_ = fakePromotionServiceClient
-			.CreatePromotionDistributeAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<int>(), Arg.Any<string>(),
-				Arg.Any<decimal>(), Arg.Any<string>())
-			.Returns(Guid.NewGuid());
-
+		var snapshotId = Guid.Parse("d1a95775-58d9-4d7e-95a5-ed2894128c29");
 		_ = fakeDistributeRegisterEventRepository
 			.CreateEventAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<string>(), Arg.Any<decimal>())
-			.Returns(Guid.NewGuid());
-
-		_ = fakePlayerBucketRepository
-			.CreatePlayerBucketAsync(Arg.Any<string>(), Arg.Any<decimal>(), Arg.Any<BucketType>())
-			.Returns(ValueTask.CompletedTask);
+			.Returns(snapshotId);
 
 		var playerInfo = new PlayerInfo { PlayerCode = playerCode, RegisteredOn = DateTimeOffset.Now.Date };
 		_ = fakePlayerServiceClient
@@ -79,14 +72,14 @@ public class SendRegisterPromotionTests
 
 		var sut = new SendRegisterPromotionCommandService(fakePromotionServiceClient, fakePlayerServiceClient,
 			fakePromotionRepository, fakePromotionJoinLockRepository, fakePromotionDistributionRepository,
-			fakeDistributeRegisterEventRepository, fakePlayerBucketRepository,
+			fakeDistributeRegisterEventRepository,
 			NullLogger<SendRegisterPromotionCommandService>.Instance);
 
 		await sut.ExecuteAsync(new(promotionId, playerCode));
 
-		_ = fakePlayerBucketRepository
+		_ = fakePromotionRepository
 			.Received(1)
-			.CreatePlayerBucketAsync(Arg.Is(playerCode), Arg.Is(200M), Arg.Is(BucketType.Promotion));
+			.CreateTotalAmountRecordForUpdateAsync(Arg.Is(promotionId), Arg.Is(snapshotId), Arg.Is(totalAmount));
 	}
 
 	[TestMethod]
@@ -109,7 +102,7 @@ public class SendRegisterPromotionTests
 
 		var sut = new SendRegisterPromotionCommandService(fakePromotionServiceClient, fakePlayerServiceClient,
 			fakePromotionRepository, fakePromotionJoinLockRepository, fakePromotionDistributionRepository,
-			fakeDistributeRegisterEventRepository, fakePlayerBucketRepository,
+			fakeDistributeRegisterEventRepository,
 			NullLogger<SendRegisterPromotionCommandService>.Instance);
 
 		await sut.ExecuteAsync(new(promotionId, playerCode));
