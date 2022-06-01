@@ -35,7 +35,15 @@ public class RegisterRuleReplyProcessor : IMessageProcessor
 			throw new ArgumentNullException(nameof(settings));
 		}
 
-		var response = new CampaignDetailResponse { CampaignDetail = JsonSerializer.Serialize(settings) };
+		var response = new CampaignDetailResponse
+		{
+			CampaignDetail = JsonSerializer.Serialize(settings,
+				new JsonSerializerOptions
+				{
+					PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+					WriteIndented = true
+				})
+		};
 
 		await _commandService.ExecuteAsync(new(request.PromotionId), cancellationToken);
 
