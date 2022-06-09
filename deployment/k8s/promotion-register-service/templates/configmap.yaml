@@ -1,0 +1,28 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: configmap-{{ include "promotion-register-service.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+data:
+  appsettings.json: |
+    {
+      "Promotion": {
+        "Url": "http://promotion-api",
+        "PlayerServiceBaseUrl": "http://player-api"
+      }
+    }
+  monitor.settings.json: |
+    {
+      "Logging":{
+        "Console": {
+          "FormatterName": "json"
+        },
+        "LogLevel": {
+          "Default": "Warning",
+          "Microsoft": "Warning",
+          "Microsoft.Diagnostics": "Warning",
+          "Microsoft.Hosting.Lifetime": "Information"
+        }
+      }
+    }
+
