@@ -48,7 +48,7 @@ public class SendRegisterPromotionTests
 		var totalAmount = 100M;
 		_ = fakePromotionRepository
 			.IncreaseToTotalAmountAsync(Arg.Any<Guid>(), Arg.Any<long>())
-			.Returns((long)totalAmount);
+			.Returns((long)totalAmount+10);
 
 		_ = fakePromotionJoinLockRepository
 			.SetWhenNotExistsAsync(Arg.Any<string>(), Arg.Any<Guid>())
@@ -65,6 +65,10 @@ public class SendRegisterPromotionTests
 			.CreateEventAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<string>(), Arg.Any<decimal>())
 			.Returns(snapshotId);
 
+		_ = fakeDistributeRegisterEventRepository
+			.GetTotalAmountAsync(Arg.Any<Guid>(), Arg.Any<Guid>())
+			.Returns(totalAmount);
+
 		var playerInfo = new PlayerInfo { PlayerCode = playerCode, RegisteredOn = DateTimeOffset.Now.Date };
 		_ = fakePlayerServiceClient
 			.GetPlayerInfoAsync(Arg.Any<string>())
@@ -79,7 +83,7 @@ public class SendRegisterPromotionTests
 
 		_ = fakePromotionRepository
 			.Received(1)
-			.CreateTotalAmountRecordForUpdateAsync(Arg.Is(promotionId), Arg.Is(snapshotId), Arg.Is(totalAmount));
+			.CreateTotalAmountRecordForUpdateAsync(Arg.Is(promotionId), Arg.Is(snapshotId), Arg.Is(totalAmount+10));
 	}
 
 	[TestMethod]
