@@ -98,14 +98,8 @@ internal class SendRegisterPromotionCommandService : ICommandService<SendRegiste
 			_logger.LogError($"detail {command.PlayerCode} is not found.");
 			return;
 		}
+
 		var total = await _distributeRegisterEventRepository.GetTotalAmountAsync(promotion.BrandId, promotion.Id) + detail.BonusAmount;
-
-		var redisTotal = await _promotionRepository.IncreaseToTotalAmountAsync(promotion.Id, (long)detail.BonusAmount);
-
-		if (total != (decimal)redisTotal)
-		{
-			await _promotionRepository.IncreaseToTotalAmountAsync(promotion.Id, (long)(total - redisTotal));
-		}
 
 		if (promotion.Unlimited == 1 || 
 		    total < promotion.TotalAmountLimit ||
@@ -129,6 +123,13 @@ internal class SendRegisterPromotionCommandService : ICommandService<SendRegiste
 				$"{command.PlayerCode} bucket amount is {bucketAmount}. ({detail.BonusAmount} * {detail.TurnoverMultiple})");
 
 			await _promotionServiceClient.DistributePromotionBonusAsync(planInfo.Id, player.PlayerCode, detail.BonusAmount, bucketAmount, "System", cancellationToken).ConfigureAwait(false);
+
+			var redisTotal = await _promotionRepository.IncreaseToTotalAmountAsync(promotion.Id, (long)detail.BonusAmount);
+
+			if (total != (decimal)redisTotal)
+			{
+				await _promotionRepository.IncreaseToTotalAmountAsync(promotion.Id, (long)(total - redisTotal));
+			}
 
 			await _promotionRepository.CreateTotalAmountRecordForUpdateAsync(promotion.Id, snapshotId, total);
 		}
