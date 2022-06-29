@@ -83,8 +83,8 @@ internal class SendRegisterPromotionCommandService : ICommandService<SendRegiste
 		}
 
 		if (player.RegisteredOn is null ||
-		    player.RegisteredOn < promotion.From ||
-		    player.RegisteredOn > promotion.To)
+			player.RegisteredOn < promotion.From ||
+			player.RegisteredOn > promotion.To)
 		{
 			_logger.LogError("join date is not during the promotion.");
 			return;
@@ -98,8 +98,14 @@ internal class SendRegisterPromotionCommandService : ICommandService<SendRegiste
 			_logger.LogError($"detail {command.PlayerCode} is not found.");
 			return;
 		}
+		var total = await _distributeRegisterEventRepository.GetTotalAmountAsync(promotion.BrandId, promotion.Id) + detail.BonusAmount;
 
-		var total = await _promotionRepository.IncreaseToTotalAmountAsync(promotion.Id, (long)detail.BonusAmount);
+		var redisTotal = await _promotionRepository.IncreaseToTotalAmountAsync(promotion.Id, (long)detail.BonusAmount);
+
+		if (total != (decimal)redisTotal)
+		{
+			await _promotionRepository.IncreaseToTotalAmountAsync(promotion.Id, (long)(total - redisTotal));
+		}
 
 		if (promotion.Unlimited == 1 || 
 		    total < promotion.TotalAmountLimit ||
