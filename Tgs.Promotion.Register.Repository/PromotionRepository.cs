@@ -66,7 +66,7 @@ internal class PromotionRepository : IPromotionRepository
         var key = string.Format(TotalUsedAmountKey, promotionId);
         var db = _redisConnectionFactory.GetDataBase();
         var totalAmount =  await db.StringIncrementAsync(key, amount);
-        _ = await db.KeyExpireAsync(key, TimeSpan.FromHours(1));
+
         return totalAmount;
     }
 
