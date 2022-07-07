@@ -5,13 +5,13 @@
 replicaCount: 1
 
 image:
-  repository: harbor.rpgp.cc/tgs/promotion-register-service
+  repository: pgtgs/promotion-register-service
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
   tag: "latest"
 
 imagePullSecrets: 
-  - name: secret-tgs-harbor
+  - name: dockerhub
 nameOverride: "promotion-register-service"
 fullnameOverride: "promotion-register-service"
 

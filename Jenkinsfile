@@ -6,7 +6,7 @@ pipeline {
 	
 	environment {
 		BuildConfiguration="Debug"
-		ImageName="harbor.rpgp.cc/tgs/promotion-register-service"
+		ImageName="pgtgs/promotion-register-service"
 	}
 
 	stages {
