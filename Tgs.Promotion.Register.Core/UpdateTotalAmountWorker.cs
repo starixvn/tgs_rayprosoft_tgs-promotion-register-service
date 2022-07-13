@@ -1,22 +1,16 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Text.Json;
-using System.Threading.Tasks;
+﻿using System.Text.Json;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using Tgs.MessageQueue;
+using Tgs.Promotion.Clients;
 
 namespace Tgs.Promotion.Register.Core;
 
 internal class UpdateTotalAmountWorker : IHostedService, IDisposable
 {
-	private int executionCount = 0;
 	private readonly ILogger<UpdateTotalAmountWorker> _logger;
-	private Timer _timer = null!;
 	private readonly IServiceProvider _serviceProvider;
+	private Timer _timer = null!;
 
 	public UpdateTotalAmountWorker(
 		IServiceProvider serviceProvider,
@@ -26,47 +20,16 @@ internal class UpdateTotalAmountWorker : IHostedService, IDisposable
 		_serviceProvider = serviceProvider;
 	}
 
+	public void Dispose() => _timer?.Dispose();
+
 	public Task StartAsync(CancellationToken stoppingToken)
 	{
 		_logger.LogInformation("Timed Hosted Service running.");
 
-		_timer = new Timer(DoWork, null, TimeSpan.Zero,
-			TimeSpan.FromMinutes(5));
+		_timer = new(DoWork, null, TimeSpan.Zero,
+			TimeSpan.FromSeconds(30));
 
 		return Task.CompletedTask;
-	}
-
-	private void DoWork(object? state)
-	{
-		using var scope = _serviceProvider.CreateScope();
-
-		var messageSender = scope.ServiceProvider.GetRequiredService<IMessageSender>();
-		var promotionRepository = scope.ServiceProvider.GetRequiredService<IPromotionRepository>();
-
-		var list = promotionRepository.GetAllTotalAmountRecordForUpdateAsync();
-
-		var totalAmounts = list.GroupBy(x => new { x.PromotionId }, (group, items) =>
-		{
-			var snapshotId = items.Max(x => x.SnapshotId);
-			var amount = items.First(x => x.SnapshotId == snapshotId);
-			return new
-			{
-				group.PromotionId,
-				SnapshotId = snapshotId,
-				amount.TotalAmount
-			};
-		});
-
-		foreach (var totalAmount in totalAmounts)
-		{
-			messageSender.PublishAsync("tgs.promotion.totalusedamount",
-				Encoding.UTF8.GetBytes(JsonSerializer.Serialize(totalAmount))).ConfigureAwait(false);
-		}
-
-		promotionRepository.RemoveAllTotalAmountRecordForUpdateAsync();
-
-		_logger.LogInformation(
-			"Timed Hosted Service is working. Count: {list}", list);
 	}
 
 	public Task StopAsync(CancellationToken stoppingToken)
@@ -78,8 +41,45 @@ internal class UpdateTotalAmountWorker : IHostedService, IDisposable
 		return Task.CompletedTask;
 	}
 
-	public void Dispose()
+	private void DoWork(object? state)
 	{
-		_timer?.Dispose();
+		using var scope = _serviceProvider.CreateScope();
+
+		var promotionRepository = scope.ServiceProvider.GetRequiredService<IPromotionRepository>();
+		var promotionServiceClient = scope.ServiceProvider.GetRequiredService<IPromotionServiceClient>();
+
+		var list = promotionRepository.GetAllTotalAmountRecordForUpdateAsync();
+
+		_logger.LogInformation(
+			"total amount record: {list}", list);
+
+		var totalAmounts = list.GroupBy(x => new { x!.PromotionId }, (group, items) =>
+		{
+			var snapshotId = items.Max(x => x!.SnapshotId);
+			var amount = items.First(x => x!.SnapshotId == snapshotId);
+			return new
+			{
+				group.PromotionId,
+				SnapshotId = snapshotId,
+				amount!.TotalAmount
+			};
+		});
+
+		foreach (var totalAmount in totalAmounts)
+			_ = Task.Run(async () =>
+				{
+					_logger.LogInformation("total amount record: {JsonSerializer.Serialize(totalAmount)}", JsonSerializer.Serialize(totalAmount));
+
+					await promotionServiceClient.UpdatePromotionUsedAmountAsync(
+						totalAmount.PromotionId,
+						totalAmount.TotalAmount,
+						totalAmount.SnapshotId).ConfigureAwait(false);
+				}
+			);
+
+		promotionRepository.RemoveAllTotalAmountRecordForUpdateAsync();
+
+		_logger.LogInformation(
+			"Timed Hosted Service is working. Count: {list}", list);
 	}
 }

@@ -23,8 +23,7 @@ builder.Services
 				options.Url = config.GetConnectionString("Nats");
 			})
 			.AddProcessor<RegisterRuleReplyProcessor>("tgs.promotion.register.setting", "tgs.promotion.register.setting")
-			.AddProcessor<RegisterMessageProcessor>("tgs.promotion.register.distribute", "tgs.promotion.register.distribute")
-			.AddHandler<RegisterMessage>("tgs.promotion.register.distribute", "tgs.promotion.register.distribute");
+			.AddProcessor<RegisterMessageProcessor>("tgs.promotion.register.distribute", "tgs.promotion.register.distribute");
 	})
 	.AddNatsGlobPatternExchange("*");
 

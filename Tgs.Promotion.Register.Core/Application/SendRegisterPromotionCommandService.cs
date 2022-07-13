@@ -83,8 +83,8 @@ internal class SendRegisterPromotionCommandService : ICommandService<SendRegiste
 		}
 
 		if (player.RegisteredOn is null ||
-		    player.RegisteredOn < promotion.From ||
-		    player.RegisteredOn > promotion.To)
+			player.RegisteredOn < promotion.From ||
+			player.RegisteredOn > promotion.To)
 		{
 			_logger.LogError("join date is not during the promotion.");
 			return;
@@ -99,7 +99,7 @@ internal class SendRegisterPromotionCommandService : ICommandService<SendRegiste
 			return;
 		}
 
-		var total = await _promotionRepository.IncreaseToTotalAmountAsync(promotion.Id, (long)detail.BonusAmount);
+		var total = await _distributeRegisterEventRepository.GetTotalAmountAsync(promotion.BrandId, promotion.Id) + detail.BonusAmount;
 
 		if (promotion.Unlimited == 1 || 
 		    total < promotion.TotalAmountLimit ||
@@ -123,6 +123,13 @@ internal class SendRegisterPromotionCommandService : ICommandService<SendRegiste
 				$"{command.PlayerCode} bucket amount is {bucketAmount}. ({detail.BonusAmount} * {detail.TurnoverMultiple})");
 
 			await _promotionServiceClient.DistributePromotionBonusAsync(planInfo.Id, player.PlayerCode, detail.BonusAmount, bucketAmount, "System", cancellationToken).ConfigureAwait(false);
+
+			var redisTotal = await _promotionRepository.IncreaseToTotalAmountAsync(promotion.Id, (long)detail.BonusAmount);
+
+			if (total != (decimal)redisTotal)
+			{
+				await _promotionRepository.IncreaseToTotalAmountAsync(promotion.Id, (long)(total - redisTotal));
+			}
 
 			await _promotionRepository.CreateTotalAmountRecordForUpdateAsync(promotion.Id, snapshotId, total);
 		}

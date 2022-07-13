@@ -3,4 +3,5 @@
 public interface IDistributeRegisterEventRepository
 {
     ValueTask<Guid> CreateEventAsync(Guid brandId, Guid promotionId, string playerCode,decimal bonusAmount);
+    ValueTask<decimal> GetTotalAmountAsync(Guid brandId, Guid promotionId);
 }
