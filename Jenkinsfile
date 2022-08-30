@@ -102,7 +102,7 @@ pipeline {
                         println dedicated
                         println node_selector
 
-                        sh '''
+                        sh """
                             cat << EOF | yq e -P | helm template deployment/k8s/promotion-register-service \
                                 -n ${kube_ns} \
                                 --name-template tgs \
@@ -113,8 +113,8 @@ pipeline {
                                 "tolerations": [$dedicated],
                                 "resources": $resources
                             }
-                        '''
-                        sh '''
+                        """
+                        sh """
                             cat << EOF | yq e -P | helm template deployment/k8s/promotion-register-service \
                                 -n ${kube_ns} \
                                 --set image.tag=${TAG} \
@@ -126,7 +126,7 @@ pipeline {
                                 "tolerations": [$dedicated],
                                 "resources": $resources
                             }
-                        '''
+                        """
                     }
                 }
 			}
