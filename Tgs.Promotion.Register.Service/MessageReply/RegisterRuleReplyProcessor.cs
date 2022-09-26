@@ -42,7 +42,10 @@ public class RegisterRuleReplyProcessor : IMessageProcessor
 				{
 					PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
 					WriteIndented = true
-				})
+				}),
+			BonusAmountLimit = settings.BonusAmountLimit,
+			Percentage = settings.Percentage,
+			TurnoverMultiple = settings.TurnoverMultiple
 		};
 
 		await _commandService.ExecuteAsync(new(request.PromotionId), cancellationToken);
