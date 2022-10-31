@@ -25,15 +25,13 @@ public class RegisterRuleReplyProcessor : IMessageProcessor
 	{
 		var request = CampaignDetailRequest.Parser.ParseFrom(data.Span);
 
-		var settings = JsonSerializer.Deserialize<RegisterSetting>(request.Settings,
-			new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+		var settings = JsonSerializer.Deserialize<RegisterSetting>(
+			request.Settings,
+			new JsonSerializerOptions { PropertyNameCaseInsensitive = true })
+			?? throw new ArgumentNullException(nameof(data));
+		;
 
-		_logger.LogInformation($"register setting : {settings}");
-
-		if (settings is null)
-		{
-			throw new ArgumentNullException(nameof(settings));
-		}
+		_logger.LogInformation("register setting : {settings}", settings);
 
 		var response = new CampaignDetailResponse
 		{

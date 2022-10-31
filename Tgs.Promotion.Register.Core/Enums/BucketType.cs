@@ -1,10 +1,9 @@
-﻿namespace Tgs.Promotion.Register.Core.Enums
+﻿namespace Tgs.Promotion.Register.Core.Enums;
+
+public enum BucketType
 {
-    public enum BucketType
-    {
-        Deposit = 1,
-        Promotion = 2,
-        Adjustment = 3,
-        Vip = 4
-    }
+	Deposit = 1,
+	Promotion = 2,
+	Adjustment = 3,
+	Vip = 4
 }
