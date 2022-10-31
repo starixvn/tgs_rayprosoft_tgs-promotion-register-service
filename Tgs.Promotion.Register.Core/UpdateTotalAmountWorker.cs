@@ -36,7 +36,7 @@ internal class UpdateTotalAmountWorker : IHostedService, IDisposable
 	{
 		_logger.LogInformation("Timed Hosted Service is stopping.");
 
-		_timer?.Change(Timeout.Infinite, 0);
+		_ = (_timer?.Change(Timeout.Infinite, 0));
 
 		return Task.CompletedTask;
 	}
@@ -48,7 +48,7 @@ internal class UpdateTotalAmountWorker : IHostedService, IDisposable
 		var promotionRepository = scope.ServiceProvider.GetRequiredService<IPromotionRepository>();
 		var promotionServiceClient = scope.ServiceProvider.GetRequiredService<IPromotionServiceClient>();
 
-		var list = promotionRepository.GetAllTotalAmountRecordForUpdateAsync();
+		var list = promotionRepository.GetAllTotalAmountRecordForUpdate();
 
 		_logger.LogInformation(
 			"total amount record: {list}", list);
@@ -77,7 +77,7 @@ internal class UpdateTotalAmountWorker : IHostedService, IDisposable
 				}
 			);
 
-		promotionRepository.RemoveAllTotalAmountRecordForUpdateAsync();
+		_ = Task.Run(async () => await promotionRepository.RemoveAllTotalAmountRecordForUpdateAsync().ConfigureAwait(false));
 
 		_logger.LogInformation(
 			"Timed Hosted Service is working. Count: {list}", list);
