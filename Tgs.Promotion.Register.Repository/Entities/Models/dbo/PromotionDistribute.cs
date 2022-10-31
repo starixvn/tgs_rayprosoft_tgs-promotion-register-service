@@ -14,9 +14,9 @@ namespace Tgs.Promotion.Register.Repository.Entities
         public Guid? PlanId { get; set; }
         public string PlayerCode { get; set; } = null!;
         public Guid PromotionId { get; set; }
-        public string PromotionType { get; set; } = null!;
         public string? Distributor { get; set; }
         public DateTime? SentOn { get; set; }
+        public decimal Bucket { get; set; }
 
         public virtual Promotion Promotion { get; set; } = null!;
     }
