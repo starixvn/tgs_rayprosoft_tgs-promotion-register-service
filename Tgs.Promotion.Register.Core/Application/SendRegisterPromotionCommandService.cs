@@ -135,6 +135,8 @@ internal class SendRegisterPromotionCommandService : ICommandService<SendRegiste
 				detail.BonusAmount,
 				bucketAmount,
 				"System",
+				null,
+				[],
 				cancellationToken).ConfigureAwait(false);
 
 			var redisTotal = await _promotionRepository.IncreaseToTotalAmountAsync(promotion.Id, (long)detail.BonusAmount);
