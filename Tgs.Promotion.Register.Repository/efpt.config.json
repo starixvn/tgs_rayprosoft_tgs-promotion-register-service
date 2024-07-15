@@ -8,21 +8,18 @@
    "ModelNamespace": "Entities",
    "OutputContextPath": "Entities",
    "OutputPath": "Entities\\Models",
+   "PreserveCasingWithRegex": true,
    "ProjectRootNamespace": "Tgs.Promotion.Register.Repository",
    "Schemas": null,
    "SelectedHandlebarsLanguage": 0,
    "SelectedToBeGenerated": 0,
    "Tables": [
       {
-         "Name": "dbo.player_buckets",
+         "Name": "dbo.distribute_register_events",
          "ObjectType": 0
       },
       {
          "Name": "dbo.promotion_distribute_plans",
-         "ObjectType": 0
-      },
-      {
-         "Name": "dbo.promotions",
          "ObjectType": 0
       },
       {
@@ -34,11 +31,11 @@
          "ObjectType": 0
       },
       {
-         "Name": "dbo.distribute_register_events",
+         "Name": "dbo.promotions",
          "ObjectType": 0
       }
    ],
-   "UiHint": "tgs",
+   "UiHint": "tgs-local",
    "UseBoolPropertiesWithoutDefaultSql": false,
    "UseDatabaseNames": false,
    "UseDbContextSplitting": true,
@@ -55,5 +52,6 @@
    "UseNodaTime": false,
    "UseNullableReferences": true,
    "UseSchemaFolders": true,
-   "UseSpatial": true
+   "UseSpatial": true,
+   "UseT4": false
 }

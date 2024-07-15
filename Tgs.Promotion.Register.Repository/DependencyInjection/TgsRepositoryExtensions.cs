@@ -13,11 +13,10 @@ public static class TgsRepositoryExtensions
                 .UseNpgsql(connectionString))
             .AddTransient<IPromotionRepository, PromotionRepository>()
             .AddTransient<IDistributeRegisterEventRepository,DistributeRegisterEventRepository>()
-            .AddTransient<IPlayerBucketRepository, PlayerBucketRepository>()
             .AddTransient<IPromotionJoinLockRepository, PromotionJoinLockRepository>()
             .AddTransient<IPromotionParticipantRepository, PromotionParticipantRepository>()
             .AddTransient<IPromotionDistributionRepository, PromotionDistributionRepository>()
-			.AddSerialNumberGenerator();
+            .AddSerialNumberGenerator();
 
     public static IServiceCollection AddRedis(
         this IServiceCollection service,

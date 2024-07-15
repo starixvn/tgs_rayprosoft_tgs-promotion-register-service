@@ -1,10 +1,7 @@
 ﻿using System.Text;
 using System.Text.Json;
-using Google.Protobuf;
 using Tgs.MessageQueue;
-using Tgs.Promotion.Clients.Protos;
 using Tgs.Promotion.Register.Core.Application;
-using Tgs.Promotion.Register.Core.Models;
 using Tgs.Promotion.Register.Service.MessageHandlers;
 using Tgs.ServiceUtility;
 
@@ -22,28 +19,25 @@ public class RegisterMessageProcessor : IMessageProcessor
 		_logger = logger ?? throw new ArgumentNullException(nameof(logger));
 	}
 
-	public async ValueTask<ReadOnlyMemory<byte>> HandleAsync(ReadOnlyMemory<byte> data,
+	public async ValueTask<ReadOnlyMemory<byte>> HandleAsync(
+		ReadOnlyMemory<byte> data,
 		CancellationToken cancellationToken)
 	{
 		var json = Encoding.UTF8.GetString(data.Span);
-		var request = JsonSerializer.Deserialize<RegisterMessageData>(json)!;
+		var request = JsonSerializer.Deserialize<RegisterMessageData>(json)
+			?? throw new ArgumentNullException(nameof(data));
 
-		_logger.LogInformation($"register distribution request: {request}");
-
-		if (request is null)
-		{
-			throw new ArgumentNullException(nameof(request));
-		}
+		_logger.LogInformation("register distribution request: {request}", request);
 
 		var command =
 			new SendRegisterPromotionCommand(request.PromotionId, request.PlayerCode);
 
-		await  _commandService.ExecuteAsync(command, cancellationToken);
+		await _commandService.ExecuteAsync(command, cancellationToken);
 
 		var response = new RegisterMessageDataResponse(request.PromotionId,
 			request.PlayerCode);
 
-		_logger.LogInformation($"register distribution response: {response}");
+		_logger.LogInformation("register distribution response: {response}", response);
 
 		return (ReadOnlyMemory<byte>)Encoding.UTF8.GetBytes(JsonSerializer.Serialize(response));
 	}

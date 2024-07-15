@@ -4,8 +4,8 @@ using Tgs.MessageQueue;
 using Tgs.Promotion.Register.Core.Application;
 using Tgs.ServiceUtility;
 
-namespace Tgs.Promotion.Register.Service.MessageHandlers
-{
+namespace Tgs.Promotion.Register.Service.MessageHandlers;
+
     public class RegisterMessage : IMessageHandler
     {
         private readonly ICommandService<SendRegisterPromotionCommand> _commandService;
@@ -35,4 +35,3 @@ namespace Tgs.Promotion.Register.Service.MessageHandlers
             return _commandService.ExecuteAsync(command, cancellationToken);
         }
     }
-}

@@ -44,11 +44,11 @@ public class SendRegisterPromotionTests
 		_ = fakePromotionRepository
 			.GetPromotionWithCacheAsync(Arg.Any<Guid>())
 			.Returns(promotion);
-		
+
 		var totalAmount = 100M;
 		_ = fakePromotionRepository
 			.IncreaseToTotalAmountAsync(Arg.Any<Guid>(), Arg.Any<long>())
-			.Returns((long)totalAmount+10);
+			.Returns((long)totalAmount + 10);
 
 		_ = fakePromotionJoinLockRepository
 			.SetWhenNotExistsAsync(Arg.Any<string>(), Arg.Any<Guid>())
@@ -81,9 +81,8 @@ public class SendRegisterPromotionTests
 
 		await sut.ExecuteAsync(new(promotionId, playerCode));
 
-		_ = fakePromotionRepository
-			.Received(1)
-			.CreateTotalAmountRecordForUpdateAsync(Arg.Is(promotionId), Arg.Is(snapshotId), Arg.Is(totalAmount+10));
+		_ = fakePromotionRepository.Received(1)
+			.CreateTotalAmountRecordForUpdateAsync(Arg.Is(promotionId), Arg.Is(snapshotId), Arg.Is(totalAmount + 10));
 	}
 
 	[TestMethod]
@@ -93,7 +92,6 @@ public class SendRegisterPromotionTests
 		var playerCode = "playerCode";
 
 		var fakeDistributeRegisterEventRepository = Substitute.For<IDistributeRegisterEventRepository>();
-		var fakePlayerBucketRepository = Substitute.For<IPlayerBucketRepository>();
 		var fakePromotionRepository = Substitute.For<IPromotionRepository>();
 		var fakePromotionJoinLockRepository = Substitute.For<IPromotionJoinLockRepository>();
 		var fakePromotionDistributionRepository = Substitute.For<IPromotionDistributionRepository>();

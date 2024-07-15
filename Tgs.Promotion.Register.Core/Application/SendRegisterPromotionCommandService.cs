@@ -1,9 +1,7 @@
 ﻿using System.Text.Json;
-using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using Tgs.PlayerService.Client;
 using Tgs.Promotion.Clients;
-using Tgs.Promotion.Register.Core.Enums;
 using Tgs.Promotion.Register.Core.Models;
 using Tgs.ServiceUtility;
 
@@ -12,12 +10,12 @@ namespace Tgs.Promotion.Register.Core.Application;
 internal class SendRegisterPromotionCommandService : ICommandService<SendRegisterPromotionCommand>
 {
 	private readonly IDistributeRegisterEventRepository _distributeRegisterEventRepository;
+	private readonly ILogger<SendRegisterPromotionCommandService> _logger;
 	private readonly IPlayerServiceClient _playerServiceClient;
-	private readonly IPromotionJoinLockRepository _promotionJoinLockRepository;
 	private readonly IPromotionDistributionRepository _promotionDistributionRepository;
+	private readonly IPromotionJoinLockRepository _promotionJoinLockRepository;
 	private readonly IPromotionRepository _promotionRepository;
 	private readonly IPromotionServiceClient _promotionServiceClient;
-	private readonly ILogger<SendRegisterPromotionCommandService> _logger;
 
 	public SendRegisterPromotionCommandService(
 		IPromotionServiceClient promotionServiceClient,
@@ -54,7 +52,10 @@ internal class SendRegisterPromotionCommandService : ICommandService<SendRegiste
 
 		if (promotionIsJoined)
 		{
-			_logger.LogError($"promotion {command.PromotionId} : {command.PlayerCode} is not found.");
+			_logger.LogError(
+				"promotion {command.PromotionId} : {command.PlayerCode} is not found.",
+				command.PromotionId,
+				command.PlayerCode);
 			return;
 		}
 
@@ -62,14 +63,16 @@ internal class SendRegisterPromotionCommandService : ICommandService<SendRegiste
 
 		if (promotion is null || promotion.Status != 0)
 		{
-			_logger.LogError($"promotion {command.PromotionId} is not found.");
+			_logger.LogError("promotion {command.PromotionId} is not found.", command.PromotionId);
 			return;
 		}
 
 		if (promotion.Unlimited == 0 && promotion.AmountUsed >= promotion.TotalAmountLimit)
 		{
 			_logger.LogError(
-				$"promotion used amount {promotion.AmountUsed} has reached the limit of total amount {promotion.TotalAmountLimit}.");
+				"promotion used amount {promotion.AmountUsed} has reached the limit of total amount {promotion.TotalAmountLimit}.",
+				promotion.AmountUsed,
+				promotion.TotalAmountLimit);
 			return;
 		}
 
@@ -78,7 +81,7 @@ internal class SendRegisterPromotionCommandService : ICommandService<SendRegiste
 
 		if (player is null)
 		{
-			_logger.LogError($"player {command.PlayerCode} is not found.");
+			_logger.LogError("player {command.PlayerCode} is not found.", command.PlayerCode);
 			return;
 		}
 
@@ -95,22 +98,22 @@ internal class SendRegisterPromotionCommandService : ICommandService<SendRegiste
 
 		if (detail is null)
 		{
-			_logger.LogError($"detail {command.PlayerCode} is not found.");
+			_logger.LogError("detail {command.PlayerCode} is not found.", command.PlayerCode);
 			return;
 		}
 
 		var total = await _distributeRegisterEventRepository.GetTotalAmountAsync(promotion.BrandId, promotion.Id) + detail.BonusAmount;
 
-		if (promotion.Unlimited == 1 || 
-		    total < promotion.TotalAmountLimit ||
-		    total - detail.BonusAmount <= promotion.TotalAmountLimit)
+		if (promotion.Unlimited == 1 ||
+			total < promotion.TotalAmountLimit ||
+			total - detail.BonusAmount <= promotion.TotalAmountLimit)
 		{
 			var planInfo =
 				await _promotionServiceClient.GetPromotionDistributePlanAsync(promotion.Id, 0, cancellationToken);
 
 			if (planInfo is null)
 			{
-				_logger.LogError($"detail {command.PlayerCode} is not found.");
+				_logger.LogError("detail {command.PlayerCode} is not found.", command.PlayerCode);
 				return;
 			}
 
@@ -120,15 +123,27 @@ internal class SendRegisterPromotionCommandService : ICommandService<SendRegiste
 
 			var bucketAmount = detail.BonusAmount * detail.TurnoverMultiple;
 			_logger.LogInformation(
-				$"{command.PlayerCode} bucket amount is {bucketAmount}. ({detail.BonusAmount} * {detail.TurnoverMultiple})");
+				"{command.PlayerCode} bucket amount is {bucketAmount}. ({detail.BonusAmount} * {detail.TurnoverMultiple})",
+				command.PlayerCode,
+				bucketAmount,
+				detail.BonusAmount,
+				detail.TurnoverMultiple);
 
-			await _promotionServiceClient.DistributePromotionBonusAsync(planInfo.Id, player.PlayerCode, detail.BonusAmount, bucketAmount, "System", cancellationToken).ConfigureAwait(false);
+			_ = await _promotionServiceClient.DistributePromotionBonusAsync(
+				planInfo.Id,
+				player.PlayerCode,
+				detail.BonusAmount,
+				bucketAmount,
+				"System",
+				null,
+				[],
+				cancellationToken).ConfigureAwait(false);
 
 			var redisTotal = await _promotionRepository.IncreaseToTotalAmountAsync(promotion.Id, (long)detail.BonusAmount);
 
 			if (total != (decimal)redisTotal)
 			{
-				await _promotionRepository.IncreaseToTotalAmountAsync(promotion.Id, (long)(total - redisTotal));
+				_ = await _promotionRepository.IncreaseToTotalAmountAsync(promotion.Id, (long)(total - redisTotal));
 			}
 
 			await _promotionRepository.CreateTotalAmountRecordForUpdateAsync(promotion.Id, snapshotId, total);
